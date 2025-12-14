@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 import _thread
 import argparse
+import csv
 import json
 import os
 import os.path
+import pathlib
 import ssl
 import subprocess
 import sys
@@ -16,7 +18,6 @@ from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 from time import time, sleep, localtime, strftime
 
-import os_release
 import paho.mqtt.client as mqtt
 import requests
 import sdnotify
@@ -595,9 +596,13 @@ def getDeviceModel():
 
 def getLinuxRelease():
     global rpi_linux_release
-    os_data = os_release.current_release()
-    rpi_linux_release = os_data.pretty_name
-    print_line('rpi_linux_release=[{}]'.format(os_data.pretty_name), debug=True)
+    path = pathlib.Path("/etc/os-release")
+    with open(path) as stream:
+        reader = csv.reader(stream, delimiter="=")
+        os_release = dict(reader)
+        stream.close()
+    rpi_linux_release = os_release['VERSION_CODENAME']
+    print_line('rpi_linux_release=[{}]'.format(rpi_linux_release), debug=True)
 
 
 def getLinuxVersion():
