@@ -601,7 +601,7 @@ def getLinuxRelease():
         reader = csv.reader(stream, delimiter="=")
         os_release = dict(reader)
         stream.close()
-    rpi_linux_release = os_release['VERSION_CODENAME']
+    rpi_linux_release = os_release['PRETTY_NAME']
     print_line('rpi_linux_release=[{}]'.format(rpi_linux_release), debug=True)
 
 
