@@ -1,31 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from urllib3.exceptions import InsecureRequestWarning
-import requests
-import time
 import _thread
-from datetime import datetime, timedelta
-from tzlocal import get_localzone
-import threading
-import socket
-import os
-import subprocess
-import uuid
-import ssl
-import sys
-import re
-import json
-import os.path
 import argparse
-from time import time, sleep, localtime, strftime
+import json
+import os
+import os.path
+import ssl
+import subprocess
+import sys
+import threading
+import time
 from collections import OrderedDict
-from colorama import init as colorama_init
-from colorama import Fore, Back, Style
 from configparser import ConfigParser
-from unidecode import unidecode
-import paho.mqtt.client as mqtt
-import sdnotify
+from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
+from time import time, sleep, localtime, strftime
+
+import os_release
+import paho.mqtt.client as mqtt
+import requests
+import sdnotify
+from colorama import Fore, Style
+from tzlocal import get_localzone
+from unidecode import unidecode
+from urllib3.exceptions import InsecureRequestWarning
+
 signal(SIGPIPE, SIG_DFL)
 
 apt_available = True
@@ -63,6 +62,7 @@ opt_verbose = False
 # Systemd Service Notifications - https://github.com/bb4242/sdnotify
 sd_notifier = sdnotify.SystemdNotifier()
 
+
 # Logging function
 
 
@@ -94,6 +94,7 @@ def print_line(text, error=False, warning=False, info=False, verbose=False, debu
         sd_notifier.notify(
             'STATUS={} - {}.'.format(timestamp_sd, unidecode(text)))
 
+
 # Identifier cleanup
 
 
@@ -107,7 +108,7 @@ def clean_identifier(name):
         ['Ö', 'Oe'],
         ['ü', 'ue'],
         ['Ü', 'Ue'],
-            ['ß', 'ss']]:
+        ['ß', 'ss']]:
         clean = clean.replace(this, that)
     clean = unidecode(clean)
     return clean
@@ -173,9 +174,10 @@ def on_connect(client, userdata, flags, rc):
 
     else:
         print_line('! Connection error with result code {} - {}'.format(str(rc),
-                   mqtt.connack_string(rc)), error=True)
+                                                                        mqtt.connack_string(rc)), error=True)
         print_line('MQTT Connection error with result code {} - {}'.format(str(rc),
-                   mqtt.connack_string(rc)), error=True, sd_notify=True)
+                                                                           mqtt.connack_string(rc)), error=True,
+                   sd_notify=True)
         # technically NOT useful but readying possible new shape...
         mqtt_client_connected = False
         print_line('on_connect() mqtt_client_connected=[{}]'.format(
@@ -196,6 +198,7 @@ def on_disconnect(client, userdata, mid):
 def on_publish(client, userdata, mid):
     # print_line('* Data successfully published.')
     pass
+
 
 # -----------------------------------------------------------------------------
 # Commands - MQTT Subscription Callback
@@ -227,7 +230,8 @@ def on_message(client, userdata, message):
     if command != 'status':
         if command in commands:
             print_line('- Command "{}" Received - Run {} {} -'.format(command,
-                       commands[command], decoded_payload), console=True, debug=True)
+                                                                      commands[command], decoded_payload), console=True,
+                       debug=True)
             pHandle = subprocess.Popen([shell_cmd_fspec, "-c", commands[command].format(decoded_payload)])
             output, errors = pHandle.communicate()
             if errors or pHandle.returncode:
@@ -239,7 +243,7 @@ def on_message(client, userdata, message):
 # -----------------------------------------------------------------------------
 # Load configuration file
 config = ConfigParser(delimiters=(
-    '=', ), inline_comment_prefixes=('#'), interpolation=None)
+    '=',), inline_comment_prefixes=('#'), interpolation=None)
 config.optionxform = str
 try:
     with open(os.path.join(config_dir, 'config.ini')) as config_file:
@@ -303,13 +307,15 @@ if config.has_section('Commands'):
 # Check configuration
 #
 if (interval_in_minutes < min_interval_in_minutes) or (interval_in_minutes > max_interval_in_minutes):
-    print_line('ERROR: Invalid "interval_in_minutes" found in configuration file: "config.ini"! Must be [{}-{}] Fix and try again... Aborting'.format(
-        min_interval_in_minutes, max_interval_in_minutes), error=True, sd_notify=True)
+    print_line(
+        'ERROR: Invalid "interval_in_minutes" found in configuration file: "config.ini"! Must be [{}-{}] Fix and try again... Aborting'.format(
+            min_interval_in_minutes, max_interval_in_minutes), error=True, sd_notify=True)
     sys.exit(1)
 
 if (check_interval_in_hours < min_check_interval_in_hours) or (check_interval_in_hours > max_check_interval_in_hours):
-    print_line('ERROR: Invalid "check_updates_in_hours" found in configuration file: "config.ini"! Must be [{}-{}] Fix and try again... Aborting'.format(
-        min_check_interval_in_hours, max_check_interval_in_hours), error=True, sd_notify=True)
+    print_line(
+        'ERROR: Invalid "check_updates_in_hours" found in configuration file: "config.ini"! Must be [{}-{}] Fix and try again... Aborting'.format(
+            min_check_interval_in_hours, max_check_interval_in_hours), error=True, sd_notify=True)
     sys.exit(1)
 
 # Ensure required values within sections of our config are present
@@ -370,7 +376,7 @@ def getDaemonReleases():
 
         daemon_version_list = newVersionList
         print_line('- RQST daemon_version_list=({})'.format(daemon_version_list), debug=True)
-        daemon_last_fetch_time = time()    # record when we last fetched the versions
+        daemon_last_fetch_time = time()  # record when we last fetched the versions
 
 
 getDaemonReleases()  # and load them!
@@ -434,10 +440,11 @@ rpi_cpuload15 = ''
 rpi_update_count = 0
 
 if apt_available == False:
-    rpi_update_count = -1   # if packaging system not avail. report -1
+    rpi_update_count = -1  # if packaging system not avail. report -1
 
 # Time for network transfer calculation
 previous_time = time()
+
 
 # -----------------------------------------------------------------------------
 #  monitor variable fetch routines
@@ -479,11 +486,11 @@ def getDeviceCpuInfo():
     for currLine in lines:
         trimmedLine = currLine.lstrip().rstrip()
         trimmedLines.append(trimmedLine)
-    cpu_hardware = ''   # 'hardware'
-    cpu_cores = 0       # count of 'processor' lines
-    cpu_model = ''      # 'model name'
+    cpu_hardware = ''  # 'hardware'
+    cpu_cores = 0  # count of 'processor' lines
+    cpu_model = ''  # 'model name'
     cpu_bogoMIPS = 0.0  # sum of 'BogoMIPS' lines
-    cpu_serial = ''     # 'serial'
+    cpu_serial = ''  # 'serial'
     for currLine in trimmedLines:
         lineParts = currLine.split(':')
         currValue = '{?unk?}'
@@ -588,12 +595,9 @@ def getDeviceModel():
 
 def getLinuxRelease():
     global rpi_linux_release
-    stdout, _, returncode = invoke_shell_cmd(
-        "/bin/cat /etc/apt/sources.list | /bin/egrep -v '#' | /usr/bin/awk '{ print $3 }' | /bin/sed -e 's/-/ /g' | /usr/bin/cut -f1 -d' ' | /bin/grep . | /usr/bin/sort -u")
-    rpi_linux_release = 'N/A'
-    if not returncode:
-        rpi_linux_release = stdout.decode('utf-8').rstrip()
-    print_line('rpi_linux_release=[{}]'.format(rpi_linux_release), debug=True)
+    os_data = os_release.current_release()
+    rpi_linux_release = os_data.pretty_name
+    print_line('rpi_linux_release=[{}]'.format(os_data.pretty_name), debug=True)
 
 
 def getLinuxVersion():
@@ -838,7 +842,7 @@ def getNetworkIFs():
         getNetworkIFsUsingIP(ip_cmd)
     else:
         stdout, _, returncode = invoke_shell_cmd(
-            '/sbin/ifconfig | /bin/egrep "Link|flags|inet |ether " | /bin/egrep -v -i "lo:|loopback|inet6|\:\:1|127\.0\.0\.1"')
+            '/sbin/ifconfig | /bin/egrep "Link|flags|inet |ether " | /bin/egrep -v -i "lo:|loopback|inet6|::1|127.0.0.1"')
         lines = []
         if not returncode:
             lines = stdout.decode('utf-8').split("\n")
@@ -948,7 +952,7 @@ def getFileSystemDrives():
         total_size_in_gb = '{:.0f}'.format(
             next_power_of_2(lineParts[total_size_idx]))
         newTuple = (total_size_in_gb, lineParts[percent_field_index].replace(
-            '%', ''),  mount_point, device)
+            '%', ''), mount_point, device)
         tmpDrives.append(newTuple)
         print_line('newTuple=[{}]'.format(newTuple), debug=True)
         if newTuple[2] == '/':
@@ -1129,14 +1133,14 @@ def interpretThrottleValue(throttleValue):
     print_line('throttleValue=[{}]'.format(bin(throttleValue)), debug=True)
     interpResult = []
     meanings = [
-        (2**0, 'Under-voltage detected'),
-        (2**1, 'Arm frequency capped'),
-        (2**2, 'Currently throttled'),
-        (2**3, 'Soft temperature limit active'),
-        (2**16, 'Under-voltage has occurred'),
-        (2**17, 'Arm frequency capped has occurred'),
-        (2**18, 'Throttling has occurred'),
-        (2**19, 'Soft temperature limit has occurred'),
+        (2 ** 0, 'Under-voltage detected'),
+        (2 ** 1, 'Arm frequency capped'),
+        (2 ** 2, 'Currently throttled'),
+        (2 ** 3, 'Soft temperature limit active'),
+        (2 ** 16, 'Under-voltage has occurred'),
+        (2 ** 17, 'Arm frequency capped has occurred'),
+        (2 ** 18, 'Throttling has occurred'),
+        (2 ** 19, 'Soft temperature limit has occurred'),
     ]
 
     for meaningIndex in range(len(meanings)):
@@ -1306,7 +1310,6 @@ def isAliveTimerRunning():
 aliveTimer = threading.Timer(K_ALIVE_TIMOUT_IN_SECONDS, aliveTimeoutHandler)
 # our BOOL tracking state of ALIVE TIMER
 aliveTimerRunningStatus = False
-
 
 # -----------------------------------------------------------------------------
 #  MQTT setup and startup
@@ -1495,8 +1498,8 @@ for [command, _] in commands.items():
 sensor_base_topic = '{}/sensor/{}'.format(base_topic, sensor_name.lower())
 values_topic_rel = '{}/{}'.format('~', K_LD_MONITOR)
 values_topic = '{}/{}'.format(sensor_base_topic, K_LD_MONITOR)
-activity_topic_rel = '{}/status'.format('~')     # vs. LWT
-activity_topic = '{}/status'.format(sensor_base_topic)    # vs. LWT
+activity_topic_rel = '{}/status'.format('~')  # vs. LWT
+activity_topic = '{}/status'.format(sensor_base_topic)  # vs. LWT
 
 command_topic_rel = '~/set'
 
@@ -1841,6 +1844,7 @@ def update_values():
     getDeviceMemory()
     getNetworkIFs()
 
+
 # -----------------------------------------------------------------------------
 
 # Interrupt handler
@@ -1872,6 +1876,7 @@ def afterMQTTConnect():
     startPeriodTimer()
     # do our first report
     handle_interrupt(0)
+
 
 # TESTING AGAIN
 # getNetworkIFs()
@@ -1906,7 +1911,7 @@ try:
 finally:
     # cleanup used pins... just because we like cleaning up after us
     publishShuttingDownStatus()
-    stopPeriodTimer()   # don't leave our timers running!
+    stopPeriodTimer()  # don't leave our timers running!
     stopAliveTimer()
     mqtt_client.disconnect()
     print_line('* MQTT Disconnect()', verbose=True)
